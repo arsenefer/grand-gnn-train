@@ -1,0 +1,30 @@
+{
+  "_doc": "GNN model card of an ensemble of the GNN codes, stating what that code did implicitly; converted with python -m grand_gnn_train.convert_legacy. See README.md.",
+  "name": "pgnn_direction_xy",
+  "version": "v0",
+  "task": "direction",
+  "description": "pGNN direction (ICRC/paper ensemble). Converted from the GNN codes (GNNScaleMDN of GNN_forICRC, notebook 'applied_on_data 2026'): 6 node features with delta_t, which that code did not normalise (its NormaliseLayer mask had 5 entries); delta_t computed with the speed c*1.00014 as make_delta_t did. Trigger: 5 sigma with 15 ADC per channel, i.e. 5*15*sqrt(2) = 106.07 ADC on x, y (the GP300_106ADC datasets); knn_k 8.",
+  "inputs": {
+    "channels": ["x", "y"],
+    "node_features": ["pos_x", "pos_y", "pos_z", "time", "amplitude", "delta_t"],
+    "graph_features": ["k_pwf_x", "k_pwf_y", "k_pwf_z"],
+    "delta_t_wave_speed": 299834428.94412,
+    "trigger": {"n_sigma": 5.0, "noise_rms_per_channel": 15.0, "min_antennas": 5},
+    "knn_k": 8
+  },
+  "normalisation": {
+    "pos_x": {"scale": 0.0001},
+    "pos_y": {"scale": 0.0001},
+    "pos_z": {"scale": 0.01},
+    "time": {"scale": 20000.0},
+    "amplitude": {"power": 0.2, "scale": 0.125}
+  },
+  "architecture": {
+    "hidden": 256,
+    "n_graph_layers": 4,
+    "graph_out_channels": 256,
+    "norm": null,
+    "jk": null,
+    "dropout": 0.0
+  }
+}

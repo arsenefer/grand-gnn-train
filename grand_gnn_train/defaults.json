@@ -1,0 +1,109 @@
+{
+  "_doc": [
+    "training: defaults of the GNN model card's training hyperparameters (the GNN model card overrides them).",
+    "simulations, compute, paths: not part of the network; a site settings file",
+    "(settings/*.json, --settings) overrides them.",
+    "Keys starting with '_' are comments."
+  ],
+  "simulations": {
+    "_doc": {
+      "directories": "glob patterns of GRANDroot simulation directories",
+      "trace_files": "glob, in each directory, of the files holding the traces (name the level: L0 / L1)",
+      "trace_tree": "their tree: tadc (ADC counts) or tvoltage (µV, converted to ADC)",
+      "time_files": "glob of the files giving du_seconds / du_nanoseconds of each trace",
+      "time_tree": "their tree",
+      "truth_angle_unit": "unit of the tshower zenith / azimuth in these files",
+      "max_du_id": "keep du_id < max_du_id (277: GP300 only); null keeps all",
+      "validation_modulo": "[m, [r...]]: validation if event_number % m is one of r",
+      "chunk_size": "events read at a time",
+      "augment": "time_jitter_ns: Gaussian jitter of the trace start times; gain_smearing: relative Gaussian smearing of each antenna's gain; noise: {\"provider\": \"module:function\", \"kwargs\": {}}, see augment.py"
+    },
+    "directories": [],
+    "trace_files": "adc_*_L1_*.root",
+    "trace_tree": "tadc",
+    "time_files": "adc_*_L1_*.root",
+    "time_tree": "tadc",
+    "dt_ns": 2.0,
+    "truth_angle_unit": "deg",
+    "max_du_id": null,
+    "validation_modulo": [
+      10,
+      [
+        0,
+        1
+      ]
+    ],
+    "chunk_size": 50,
+    "augment": {
+      "time_jitter_ns": 5.0,
+      "gain_smearing": 0.07,
+      "noise": null,
+      "seed": 0
+    }
+  },
+  "training": {
+    "_doc": {
+      "seeds": "one ensemble member per seed",
+      "phases": "[epochs, learning rate] phases, as in the GNN codes' train_model.py",
+      "patience": "stop after this many epochs without validation improvement; null: run every epoch",
+      "max_train_events": "use at most this many training graphs; null: all",
+      "max_val_events": "use at most this many validation graphs; null: all",
+      "keep": "the state saved: best (lowest validation loss) or last (end of the last phase)"
+    },
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "batch_size": 4,
+    "phases": [
+      [
+        16,
+        0.00015
+      ],
+      [
+        44,
+        8e-05
+      ],
+      [
+        44,
+        4e-05
+      ],
+      [
+        16,
+        2e-05
+      ]
+    ],
+    "weight_decay": 0.0,
+    "patience": 20,
+    "keep": "best",
+    "max_train_events": null,
+    "max_val_events": null
+  },
+  "compute": {
+    "_doc": {
+      "device": "cpu, cuda or auto",
+      "num_threads": "torch CPU threads; null leaves torch's default"
+    },
+    "device": "auto",
+    "num_threads": null
+  },
+  "paths": {
+    "_doc": {
+      "datasets_dir": "formatted datasets, one directory per (inputs, simulations): shared by the GNN model cards that need the same graphs",
+      "runs_dir": "trained seeds, <runs_dir>/<name>_<version>/seed_XX",
+      "models_dir": "exported networks, <models_dir>/<name>/<version>/ as grand reads them",
+      "relative": "relative paths are relative to the current directory"
+    },
+    "datasets_dir": "work/datasets",
+    "runs_dir": "work/runs",
+    "models_dir": "work/models"
+  }
+}

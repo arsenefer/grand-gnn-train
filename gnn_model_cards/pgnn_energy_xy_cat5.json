@@ -1,0 +1,30 @@
+{
+  "_doc": "GNN model card: what the network is (task, inputs, normalisation, architecture, output) and how it is trained (training). python -m grand_gnn_train --gnn-model-card <this file> builds or reuses its dataset, trains, exports and evaluates it. See README.md and RUNBOOK_CC.md.",
+  "name": "pgnn_energy_xy_cat5",
+  "version": "v1",
+  "task": "energy",
+  "description": "pGNN energy with the same network as pgnn_direction_xy_cat5: EdgeCNN 5 x 256 with batch norm, jk cat (all layers concatenated), mean+max readout, 8 neighbours. Inputs, normalisation (gnn_lib), trigger and training as pgnn_energy_xy v1 (the GNN paper's recipe), so that only the network differs.",
+  "inputs": {
+    "channels": ["x", "y"],
+    "node_features": ["pos_x", "pos_y", "pos_z", "time", "amplitude", "delta_t"],
+    "graph_features": ["k_pwf_x", "k_pwf_y", "k_pwf_z"],
+    "delta_t_wave_speed": 299834428.94412,
+    "trigger": {"n_sigma": 5.0, "noise_rms_per_channel": 15.0, "min_antennas": 5},
+    "knn_k": 8
+  },
+  "normalisation": "gnn_lib",
+  "architecture": {"hidden": 256, "n_graph_layers": 5, "graph_out_channels": 256, "norm": "batch", "jk": "cat", "dropout": 0.0},
+  "output": {
+    "scale_eV": 1e+17
+  },
+  "training": {
+    "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+    "batch_size": 4,
+    "phases": [[15, 0.00015], [44, 8e-05], [44, 4e-05], [15, 2e-05]],
+    "weight_decay": 0.0,
+    "patience": null,
+    "keep": "last",
+    "max_train_events": 5000,
+    "max_val_events": 1200
+  }
+}

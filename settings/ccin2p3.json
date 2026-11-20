@@ -1,0 +1,22 @@
+{
+  "_doc": [
+    "CC-IN2P3, training set: DC2 ADC L1 simulations with noise (the *-AN directories), GP300 antennas.",
+    "The directory pattern is the one make_dataset_root.py of GNN_forPaper used on CC: check it with",
+    "ls -d /sps/grand/DC2.1rc4/*-AN/*/ | head  (see RUNBOOK_CC.md, step 0).",
+    "Use with --settings settings/ccin2p3.json."
+  ],
+  "simulations": {
+    "directories": ["/sps/grand/DC2.1rc4/*-AN/*/"],
+    "trace_files": "adc_*_L1_*.root",
+    "trace_tree": "tadc",
+    "time_files": "adc_*_L1_*.root",
+    "time_tree": "tadc",
+    "max_du_id": 277
+  },
+  "compute": {"device": "auto"},
+  "paths": {
+    "datasets_dir": "/sps/grand/aferrier/DATA/GNN/grand_gnn_train/datasets",
+    "runs_dir": "/sps/grand/aferrier/MODELS/GNN/grand_gnn_train/runs",
+    "models_dir": "/sps/grand/aferrier/MODELS/GNN/grand_gnn_train/models"
+  }
+}

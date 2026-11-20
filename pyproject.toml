@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grand-gnn-train"
+version = "0.1.0"
+description = "Simulation formatting and training of the GNN networks of grand.analysis.gnn"
+requires-python = ">=3.10"
+# grand itself (with ROOT) comes from its conda environment and `source env/setup.sh`
+# (or `pip install -e "<grand>[gnn]"`); it is not on PyPI.
+dependencies = ["numpy", "scipy", "pandas", "matplotlib", "torch", "torch_geometric", "uproot", "awkward"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["grand_gnn_train*"]
+
+[tool.setuptools.package-data]
+grand_gnn_train = ["defaults.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

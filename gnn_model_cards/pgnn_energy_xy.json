@@ -1,0 +1,30 @@
+{
+  "_doc": "GNN model card: what the network is (task, inputs, normalisation, architecture, output) and how it is trained (training). python -m grand_gnn_train --gnn-model-card <this file> builds or reuses its dataset, trains, exports and evaluates it. See README.md and RUNBOOK_CC.md.",
+  "name": "pgnn_energy_xy",
+  "version": "v1",
+  "task": "energy",
+  "description": "pGNN electromagnetic energy of the GNN paper: GNN_forPaper reconstructions/Energy_ADC/after_writing_selection/configs/config_28.json (model_E_em_h64_l7_d0_seqF_rmean-max-sum_nbatch_i6_pTrue_tr0_nn8_lfGaussianNLLLoss_28). Same node and graph features as the direction; EdgeCNN 7 x 64 with batch norm, jk cat (sequential false), mean+max readout (what GNNScale used), 8 neighbours, Gaussian NLL on log(E_em / 1e17 eV), 110 epochs in 4 learning-rate phases, 20 seeds.",
+  "inputs": {
+    "channels": ["x", "y"],
+    "node_features": ["pos_x", "pos_y", "pos_z", "time", "amplitude", "delta_t"],
+    "graph_features": ["k_pwf_x", "k_pwf_y", "k_pwf_z"],
+    "delta_t_wave_speed": 299834428.94412,
+    "trigger": {"n_sigma": 5.0, "noise_rms_per_channel": 15.0, "min_antennas": 5},
+    "knn_k": 8
+  },
+  "normalisation": "gnn_lib",
+  "architecture": {"hidden": 64, "n_graph_layers": 7, "graph_out_channels": 64, "norm": "batch", "jk": "cat", "dropout": 0.0},
+  "output": {
+    "scale_eV": 1e+17
+  },
+  "training": {
+    "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+    "batch_size": 4,
+    "phases": [[15, 0.00015], [44, 8e-05], [44, 4e-05], [15, 2e-05]],
+    "weight_decay": 0.0,
+    "patience": null,
+    "keep": "last",
+    "max_train_events": 5000,
+    "max_val_events": 1200
+  }
+}

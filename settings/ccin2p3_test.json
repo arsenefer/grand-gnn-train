@@ -1,0 +1,23 @@
+{
+  "_doc": [
+    "CC-IN2P3, test set: simulations the networks were NOT trained on, for the inference test",
+    "(python -m grand_gnn_train.evaluate ... --test-settings settings/ccin2p3_test.json).",
+    "FILL IN directories (left blank: no path found). Same file patterns as the training set.",
+    "The augmentation seed differs from the training set's."
+  ],
+  "simulations": {
+    "directories": [],
+    "trace_files": "adc_*_L1_*.root",
+    "trace_tree": "tadc",
+    "time_files": "adc_*_L1_*.root",
+    "time_tree": "tadc",
+    "max_du_id": 277,
+    "augment": {"seed": 1}
+  },
+  "compute": {"device": "auto"},
+  "paths": {
+    "datasets_dir": "/sps/grand/aferrier/DATA/GNN/grand_gnn_train/datasets",
+    "runs_dir": "/sps/grand/aferrier/MODELS/GNN/grand_gnn_train/runs",
+    "models_dir": "/sps/grand/aferrier/MODELS/GNN/grand_gnn_train/models"
+  }
+}
