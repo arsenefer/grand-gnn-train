@@ -2,7 +2,7 @@
 
 export() writes <models_dir>/<name>/<version>/ with grand's save_model.
 To use it in grand before uploading it, name its directory:
-gnn_models = {"direction": "<that directory>"} in examples/analysis/config.py.
+gnn_models = {"direction": "<that directory>"} in grand/analysis/example/config.py.
 
 To publish it: attach gnn_<name>_<version>.tar.gz to the forge, and add
 "<name> <version> <attachment id>" to grand's data/gnn_model_version.flag.

@@ -109,7 +109,7 @@ slurm/submit_all.sh settings/ccin2p3.json settings/ccin2p3_test.json \
 
 To use the network in grand before uploading it, name its directory:
 `gnn_models = {"direction": "<models_dir>/pgnn_direction_xy/v1", ...}` in
-grand's `examples/analysis/config.py`, or
+grand's `grand/analysis/example/config.py`, or
 `gnn.load_model("direction", "<models_dir>/pgnn_direction_xy/v1")`.
 
 To publish: attach `gnn_<name>_<version>.tar.gz` to the GRAND forge, put

@@ -86,6 +86,9 @@ def dataset(run, log=print):
             keep = np.ones(len(event["du_id"]), dtype=bool)
             if sim["max_du_id"] is not None:
                 keep = event["du_id"] < sim["max_du_id"]
+            if keep.sum() < gnn_model_card["inputs"]["trigger"]["min_antennas"]:
+                counts["too_few_antennas"] += 1
+                continue
             traces, nanoseconds = augment.apply(event["traces"][keep], event["du_nanoseconds"][keep],
                                                 sim["augment"], rng, noise)
             amps, times = peaks(traces, event["du_seconds"][keep], nanoseconds, gnn_model_card, sim)
@@ -103,7 +106,8 @@ def dataset(run, log=print):
         for split, items in shards.items():
             if items:
                 torch.save(items, os.path.join(out, split, "shard_%05d.pt" % d))
-        log("%s: %d training, %d validation so far" % (directory, counts["training"], counts["validation"]))
+        log("%s: %d training, %d validation, %d with too few antennas so far"
+            % (directory, counts["training"], counts["validation"], counts["too_few_antennas"]))
         if run["max_events"] and counts["training"] + counts["validation"] >= run["max_events"]:
             break
 

@@ -13,7 +13,7 @@ Everything is one command per step, or one `slurm/submit_all.sh` for all of them
 | step | command | where | writes |
 |---|---|---|---|
 | check the simulations | `python -m grand_gnn_train.simulations --settings settings/ccin2p3.json` | login node | nothing (prints) |
-| trial on 50 events | `python -m grand_gnn_train ... --max-events 50 --seeds 0` | interactive job | `.../trials_50_events/` |
+| trial on 50 events | `python -m grand_gnn_train --gnn-model-card gnn_model_cards/pgnn_direction_xy.json --settings settings/ccin2p3.json --max-events 50 --seeds 0` | interactive job | `<runs_dir>/trials_50_events/` |
 | everything | `slurm/submit_all.sh settings/ccin2p3.json - <cards>` | login node → SLURM | dataset, seeds, network, plots |
 | inference test | `sbatch slurm/evaluate.sh <card> settings/ccin2p3.json settings/ccin2p3_test.json` | SLURM | `evaluation/test_ccin2p3_test/` |
 
@@ -34,7 +34,7 @@ The simulation path is the one `GNN_forPaper/make_dataset_root.py` used on CC (i
 
 ## 0. Before leaving the laptop (5 min)
 
-Both repositories have uncommitted changes (branch `gnn_reconstruction` of grand, and
+Both repositories have uncommitted changes (branch `dev_gnn_arsene` of grand, based on dev_marion, and
 grand-gnn-train), so copy the working trees. The data grand downloads are left out: `env/setup.sh`
 downloads them again on CC.
 
@@ -57,7 +57,7 @@ export MAMBA_ROOT_PREFIX=/sps/grand/aferrier/micromamba
 eval "$(~/bin/micromamba shell hook -s bash)"
 
 # grand's environment (ROOT, uproot, scipy, matplotlib, compilers), on /sps where there is room
-micromamba create -y -p /sps/grand/aferrier/conda_envs/grand-gnn -f ~/WorkingDir/grand/env/conda/grand-dev.yml
+micromamba create -y -p /sps/grand/aferrier/conda_envs/grand-gnn -f ~/WorkingDir/grand/env/conda/reqmt_grandenv_2509.yml
 micromamba activate /sps/grand/aferrier/conda_envs/grand-gnn
 
 # torch for the V100 GPUs, the same version as on the laptop, then PyTorch Geometric
@@ -211,8 +211,8 @@ with the exported network. The same plots and `summary.json` land in
 `python -m grand_gnn_train.evaluate --gnn-model-card <card> --settings settings/ccin2p3.json
 --test-settings settings/ccin2p3_test.json [--max-events 2000]`.
 
-To use the network in grand afterwards (e.g. `examples/analysis/main_DOI.py`), name its directory in
-`examples/analysis/config.py`:
+To use the network in grand afterwards (e.g. `grand/analysis/example/main_DOI.py`), name its directory in
+`grand/analysis/example/config.py`:
 `gnn_models = {"direction": "/sps/grand/aferrier/MODELS/GNN/grand_gnn_train/models/pgnn_direction_xy/v1", ...}`.
 
 ## If something goes wrong

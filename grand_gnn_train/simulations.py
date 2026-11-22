@@ -115,10 +115,14 @@ def check(settings_path, n_events=20):
         print("  %-22s %s" % (pattern, [os.path.basename(f) for f in _files(found[0], pattern)][:3]))
     inputs = complete_gnn_model_card({"task": "direction"})["inputs"]
     gnn_model_card = {"inputs": inputs}
+    print("  %d antennas in trun du_xyz; max_du_id %s keeps du_id < max_du_id" % (len(read_positions(found[0])), sim["max_du_id"]))
     noise = []
     for i, event in enumerate(iter_events(found[0], sim)):
         if i == n_events:
             break
+        kept = len(event["du_id"]) if sim["max_du_id"] is None else int((event["du_id"] < sim["max_du_id"]).sum())
+        print("  event %d: du_id %d..%d, %d kept by max_du_id"
+              % (event["event_number"], event["du_id"].min(), event["du_id"].max(), kept))
         amps, times = formatting.peaks(event["traces"], event["du_seconds"], event["du_nanoseconds"],
                                        gnn_model_card, sim)
         # Noise per channel: RMS of the first 100 samples of x and y, before the pulse
