@@ -52,7 +52,7 @@ def inspect(gnn_model_card_path, settings_path, max_events=2000):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--gnn-model-card", required=True)
-    parser.add_argument("--settings")
+    parser.add_argument("--settings", required=True)
     parser.add_argument("--max-events", type=int, default=2000)
     args = parser.parse_args()
     inspect(args.gnn_model_card, args.settings, args.max_events)

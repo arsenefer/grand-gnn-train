@@ -26,6 +26,8 @@ def load_split(dataset_dir, split, gnn_model_card, max_events=None):
     items = []
     for path in sorted(glob.glob(os.path.join(dataset_dir, split, "shard_*.pt"))):
         items.extend(torch.load(path, weights_only=False))
+    # A failed plane-wave fit gave NaN features in datasets made before make_graph refused them
+    items = [d for d in items if torch.isfinite(d.x).all() and torch.isfinite(d.x_graph).all()]
     items = items[:max_events]
     for data in items:
         data.y = torch.tensor(target(gnn_model_card, data), dtype=torch.float32)

@@ -229,3 +229,14 @@ def test_inspect_a_dataset_and_refuse_to_train_without_one(tmp_path, fake_simula
     inspect_dataset.inspect(gnn_model_card, settings)
     printed = capsys.readouterr().out
     assert "amplitude" in printed and "target" in printed and "antennas per graph" in printed
+
+
+def test_graphs_with_nan_features_are_not_trained_on(tmp_path, fake_simulations):
+    gnn_model_card, settings = _gnn_model_card(tmp_path)
+    run = config.load(gnn_model_card, settings)
+    cli.run(gnn_model_card, settings, steps=["dataset"], log=lambda message: None)
+    graphs = training.load_split(run["dataset_dir"], "training", run["gnn_model_card"])
+    bad = graphs[0].clone()
+    bad.x_graph[:] = float("nan")                                       # a failed plane-wave fit
+    torch.save([bad], os.path.join(run["dataset_dir"], "training", "shard_99999.pt"))
+    assert len(training.load_split(run["dataset_dir"], "training", run["gnn_model_card"])) == len(graphs)
