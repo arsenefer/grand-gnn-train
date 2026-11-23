@@ -100,12 +100,9 @@ channels, start times, antennas above the trigger). At CC-IN2P3, follow
 
 `--steps` runs some of them, `--seeds` some seeds, `--max-events N` a quick
 trial on N events (with its own dataset). On SLURM, everything chained
-(dataset, one GPU job per seed, export and evaluation), for one or more cards:
-
-```bash
-slurm/submit_all.sh settings/ccin2p3.json settings/ccin2p3_test.json \
-    gnn_model_cards/pgnn_direction_xy.json gnn_model_cards/pgnn_energy_xy.json
-```
+(dataset, one GPU job per seed, export and evaluation): the job scripts of
+`slurm/` and their list, `bash slurm/all_jobs.sh` (see RUNBOOK_CC.md). `slurm/` holds
+your paths, environment and e-mail, so it is in `.gitignore`.
 
 To use the network in grand before uploading it, name its directory:
 `gnn_models = {"direction": "<models_dir>/pgnn_direction_xy/v1", ...}` in

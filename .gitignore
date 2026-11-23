@@ -5,3 +5,7 @@ __pycache__/
 *.pt
 *.tar.gz
 work/
+
+# SLURM scripts: your paths, conda env and e-mail
+slurm/
+logs/

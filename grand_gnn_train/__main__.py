@@ -6,7 +6,7 @@
 
 Steps (all but "test" by default): dataset, train, export, evaluate (plots on
 the validation graphs), test (grand's inference on the simulations of
---test-settings, which adds this step).  On SLURM: slurm/submit_all.sh.
+--test-settings, which adds this step).  On SLURM: the job scripts of slurm/ (all_jobs.sh).
 """
 
 import argparse

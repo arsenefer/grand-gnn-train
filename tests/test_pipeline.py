@@ -216,3 +216,16 @@ def test_a_fitted_normalisation_is_fitted_once_and_saved(tmp_path, fake_simulati
     assert model.gnn_model_card["normalisation"] == fitted                # the constants the seeds were trained with
     assert set(fitted) == set(model.inputs["node_features"])
     gnn.clear_cache()
+
+
+def test_inspect_a_dataset_and_refuse_to_train_without_one(tmp_path, fake_simulations, capsys):
+    from grand_gnn_train import inspect_dataset
+
+    gnn_model_card, settings = _gnn_model_card(tmp_path)
+    run = config.load(gnn_model_card, settings)
+    with pytest.raises(FileNotFoundError, match="run --steps dataset first"):
+        training.train(run, log=lambda message: None)
+    cli.run(gnn_model_card, settings, steps=["dataset"], log=lambda message: None)
+    inspect_dataset.inspect(gnn_model_card, settings)
+    printed = capsys.readouterr().out
+    assert "amplitude" in printed and "target" in printed and "antennas per graph" in printed

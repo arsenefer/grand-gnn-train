@@ -8,14 +8,14 @@ Goal of the day: on CC-IN2P3, with the simulations on `/sps`,
 3. get the **performance plots** automatically at the end of training, then **test the inference**
    (grand's `recons_GNN` / `recons_energy_GNN`) on other simulations.
 
-Everything is one command per step, or one `slurm/submit_all.sh` for all of them.
+Everything is one command per step, or `bash slurm/all_jobs.sh` for all of them.
 
 | step | command | where | writes |
 |---|---|---|---|
 | check the simulations | `python -m grand_gnn_train.simulations --settings settings/ccin2p3.json` | login node | nothing (prints) |
 | trial on 50 events | `python -m grand_gnn_train --gnn-model-card gnn_model_cards/pgnn_direction_xy.json --settings settings/ccin2p3.json --max-events 50 --seeds 0` | interactive job | `<runs_dir>/trials_50_events/` |
-| everything | `slurm/submit_all.sh settings/ccin2p3.json - <cards>` | login node → SLURM | dataset, seeds, network, plots |
-| inference test | `sbatch slurm/evaluate.sh <card> settings/ccin2p3.json settings/ccin2p3_test.json` | SLURM | `evaluation/test_ccin2p3_test/` |
+| everything | `bash slurm/all_jobs.sh` | login node → SLURM | dataset, seeds, network, plots |
+| inference test | `sbatch slurm/job_evaluate.sh <card> settings/ccin2p3.json settings/ccin2p3_test.json` | SLURM | `evaluation/test_ccin2p3_test/` |
 
 Paths used (from `settings/ccin2p3.json`; change them there if needed):
 
@@ -72,9 +72,12 @@ cd ~/WorkingDir/grand && source env/setup.sh && cd ~/WorkingDir/grand-gnn-train
 python -c "import torch, grand.analysis.gnn as g; print(torch.__version__, 'GNN code OK')"
 ```
 
-`slurm/env.sh` activates this environment in every job. Its three paths (`GRAND_DIR`, `GNN_ENV`,
-`MICROMAMBA`) are those above; edit them there if you put things elsewhere. In a new shell:
-`cd ~/WorkingDir/grand-gnn-train && source slurm/env.sh`.
+Every job script of `slurm/` activates the environment the same way (edit these lines there if
+you put things elsewhere; `slurm/` is in `.gitignore`, so your paths stay out of git). In a new shell:
+
+```bash
+conda activate grandenv_2509 && source ~/WorkingDir/grand/env/setup.sh
+```
 
 If `import torch` then `import ROOT` fails with `GLIBCXX_3.4.31` (it did on the laptop), the
 pipeline is not concerned: it reads the simulations with uproot, without ROOT.
@@ -115,7 +118,8 @@ In an interactive job, so the login node is spared:
 
 ```bash
 srun -p htc_interactive --mem=8G -t 0-02:00:00 --pty bash -i   # or any interactive session
-cd ~/WorkingDir/grand-gnn-train && source slurm/env.sh
+conda activate grandenv_2509 && source ~/WorkingDir/grand/env/setup.sh
+cd ~/WorkingDir/grand-gnn-train
 python -m grand_gnn_train --gnn-model-card gnn_model_cards/pgnn_direction_xy.json \
     --settings settings/ccin2p3.json --max-events 50 --seeds 0
 ```
@@ -127,39 +131,31 @@ see the whole chain work on the real files, not to judge the network.
 
 ## 4. Submit everything (2 min, then hours)
 
+As in GNN_forPaper: one job script per step, and `slurm/all_jobs.sh`, the list of `sbatch` lines
+for the four cards (v1 direction and energy, and the `*_cat5` alternative: the same EdgeCNN for
+both tasks, 5 layers of 256 with batch norm, jk `cat`, 8 neighbours). Comment out the cards you
+don't want, then:
+
 ```bash
 cd ~/WorkingDir/grand-gnn-train
-slurm/submit_all.sh settings/ccin2p3.json - \
-    gnn_model_cards/pgnn_direction_xy.json gnn_model_cards/pgnn_energy_xy.json
-squeue --me
+bash slurm/all_jobs.sh
+squeue --me          # the delayed jobs show (BeginTime)
 tail -f logs/gnn_dataset_*.log
 ```
 
-To also train the alternative network (`*_cat5`: the same EdgeCNN for both tasks, 5 layers of 256
-with batch norm, jk `cat`, 8 neighbours; inputs, normalisation and training as v1), add its cards:
+No dependencies (CC refused GPU jobs with one), but delays, as in GNN_forPaper:
 
-```bash
-slurm/submit_all.sh settings/ccin2p3.json - \
-    gnn_model_cards/pgnn_direction_xy.json gnn_model_cards/pgnn_energy_xy.json \
-    gnn_model_cards/pgnn_direction_xy_cat5.json gnn_model_cards/pgnn_energy_xy_cat5.json
-```
+1. now, `slurm/job_dataset.sh` (htc, 16 GB, up to 2 days): the two datasets, one for the
+   direction v1 (32 neighbours), one shared by the energy v1 and both cat5 cards (8 neighbours).
+2. 4 h later, `slurm/job_training.sh` (gpu_v100, one V100 per seed, 8 h max each): 20 jobs per
+   card, one per seed. If a dataset took longer than 4 h, its training jobs fail at once
+   (check `logs/gnn_dataset_*.log`): resubmit them once it is done.
+3. 16 h later, `slurm/job_evaluate.sh` (htc): exports the seeds finished by then as one network,
+   then evaluates it. Resubmit it if some seeds were late: the export takes every finished seed.
 
-They need the same graphs as the energy v1 card (same inputs, 8 neighbours): one dataset for the
-three, plus the direction v1's (32 neighbours). That makes 80 GPU jobs (4 cards × 20 seeds).
-
-For each card this submits, chained with `--dependency=afterok`:
-
-1. `slurm/dataset.sh` (htc, 16 GB, up to 2 days): formats the simulations. The direction links each
-   antenna to 32 neighbours and the energy to 8, so each card has its own dataset; the two are
-   formatted in parallel. (Cards needing the same graphs would share one: the second card's dataset
-   job waits for the first, finds the dataset and stops at once.)
-2. `slurm/train_array.sh` (gpu_v100, one V100 per seed, 8 h max each): an array of 20 jobs, one
-   per seed, as the cards say. The GNN codes' job asked 8 h for its 20 seeds in a row, so one seed
-   per job should be well within the limit.
-3. `slurm/evaluate.sh` (htc): exports the 20 seeds as one network for grand, then evaluates it.
-
-Replace `-` by `settings/ccin2p3_test.json` once its directories are filled, and step 6 is done
-too. If `sbatch` asks for an account, add `#SBATCH --account=grand` to the three job scripts.
+That makes 80 GPU jobs. Set `T=settings/ccin2p3_test.json` in `all_jobs.sh` once its directories
+are filled, and step 6 is done too. If `sbatch` asks for an account, add `#SBATCH --account=grand`
+to the three job scripts.
 
 Running anything again is safe: a finished dataset is reused, trained seeds are skipped, and the
 export overwrites the network. A card changed under the same name and version is refused: give it a
@@ -200,8 +196,8 @@ voltage simulations, `new_rfchain` noise and `|H(‖x, y‖)|`.
 2. Then:
 
 ```bash
-sbatch slurm/evaluate.sh gnn_model_cards/pgnn_direction_xy.json settings/ccin2p3.json settings/ccin2p3_test.json
-sbatch slurm/evaluate.sh gnn_model_cards/pgnn_energy_xy.json settings/ccin2p3.json settings/ccin2p3_test.json
+sbatch slurm/job_evaluate.sh gnn_model_cards/pgnn_direction_xy.json settings/ccin2p3.json settings/ccin2p3_test.json
+sbatch slurm/job_evaluate.sh gnn_model_cards/pgnn_energy_xy.json settings/ccin2p3.json settings/ccin2p3_test.json
 ```
 
 Each event of those simulations goes through what grand does on measured data: peaks with
@@ -223,9 +219,10 @@ To use the network in grand afterwards (e.g. `grand/analysis/example/main_DOI.py
 | `<dir>: no file matches adc_*_L1_*.root` | other file names or level: set `trace_files` / `time_files` |
 | `ModuleNotFoundError: grand._core` | `source env/setup.sh` failed (it prints which step): rerun it in grand's directory |
 | `No module named grand_gnn_train` | `pip install -e ~/WorkingDir/grand-gnn-train`, or run from that directory |
-| dataset job killed at 2 days | raise `--time` in `slurm/dataset.sh` and resubmit (it starts over: only a finished dataset is reused), or narrow `directories` |
+| dataset job killed at 2 days | raise `--time` in `slurm/job_dataset.sh` and resubmit (it starts over: only a finished dataset is reused), or narrow `directories` |
 | `holds seeds of another GNN model card` | the card changed: bump its `version` |
-| a training job ran out of time | resubmit just that seed: `sbatch --array=<seed> slurm/train_array.sh <card> settings/ccin2p3.json` |
+| a training job ran out of time | resubmit just that seed: `sbatch slurm/job_training.sh <card> settings/ccin2p3.json <seed>` |
+| `job_submit.lua: attempt to perform arithmetic on a nil value (ngpus)` | CC could not count the GPUs of a job; CC now asks for GPUs with `--gpus=1` (plus `--partition=gpu_v100`), not `--gres=gpu:v100:1` |
 | very few events in the dataset (`too_few_antennas` large in `dataset_card.json`) | the trigger is too high for this noise: step 2, noise and trigger |
 
 ## What the cards are

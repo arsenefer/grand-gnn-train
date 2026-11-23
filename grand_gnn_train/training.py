@@ -146,6 +146,8 @@ def train(run, seeds=None, log=print):
     train_set = load_split(run["dataset_dir"], "training", gnn_model_card, training["max_train_events"])
     val_set = load_split(run["dataset_dir"], "validation", gnn_model_card, training["max_val_events"])
     log("%d training and %d validation events" % (len(train_set), len(val_set)))
+    if not train_set:
+        raise FileNotFoundError("no graphs in %s: run --steps dataset first" % run["dataset_dir"])
     gnn_model_card = with_normalisation(run, train_set)
     for seed in seeds or gnn_model_card["training"]["seeds"]:
         out_dir = os.path.join(run["run_dir"], "seed_%02d" % seed)
