@@ -18,6 +18,7 @@ from torch_geometric.loader import DataLoader
 from grand.analysis.gnn import features
 from grand.analysis.gnn.architecture import GNNScaleMDN
 
+from . import config
 from .formatting import target
 
 
@@ -101,6 +102,42 @@ def train_member(gnn_model_card, train_set, val_set, seed, out_dir, device="cpu"
     torch.save(best_state, os.path.join(out_dir, "model.pt"))
     with open(os.path.join(out_dir, "logs.json"), "w") as f:
         json.dump(logs, f)
+    log("seed %d saved in %s (best val %.4f, last val %.4f)"
+        % (seed, out_dir, logs["best_val_loss"], logs["last_val_loss"]))
+
+
+def setup(run, device):
+    """What a training job runs on and with, for its log."""
+    import platform
+    import sys
+
+    import torch_geometric
+
+    gnn_model_card, training = run["gnn_model_card"], run["gnn_model_card"]["training"]
+    gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none"
+    lines = [
+        "host %s, SLURM job %s, %d CPU threads" % (platform.node(), os.environ.get("SLURM_JOB_ID", "-"),
+                                                  torch.get_num_threads()),
+        "python %s, torch %s (CUDA %s), torch_geometric %s, numpy %s, ROOT loaded: %s"
+        % (platform.python_version(), torch.__version__, torch.version.cuda, torch_geometric.__version__,
+           np.__version__, "ROOT" in sys.modules),
+        "device %s, GPU %s" % (device, gpu),
+        "GNN model card %s/%s (%s): %s" % (gnn_model_card["name"], gnn_model_card["version"], gnn_model_card["task"],
+                                          run["gnn_model_card_path"]),
+        "inputs: channels %s, node features %s, graph features %s, knn_k %d, trigger %s"
+        % (gnn_model_card["inputs"]["channels"], gnn_model_card["inputs"]["node_features"],
+           gnn_model_card["inputs"]["graph_features"], gnn_model_card["inputs"]["knn_k"],
+           gnn_model_card["inputs"]["trigger"]),
+        "normalisation %s, architecture %s" % (gnn_model_card.get("normalisation_method"), gnn_model_card["architecture"]),
+        "training: batch %d, phases %s, weight decay %g, patience %s, keep %s, max events %s/%s"
+        % (training["batch_size"], training["phases"], training["weight_decay"], training["patience"], training["keep"],
+           training["max_train_events"], training["max_val_events"]),
+        "dataset %s" % run["dataset_dir"],
+        "seeds in %s" % run["run_dir"],
+        "grand %s, grand_gnn_train %s" % (config.provenance(run)["grand_commit"],
+                                          config.provenance(run)["grand_gnn_train_commit"]),
+    ]
+    return "\n".join("  " + line for line in lines)
 
 
 def with_normalisation(run, train_set=None):
@@ -144,6 +181,7 @@ def train(run, seeds=None, log=print):
     device = compute["device"]
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
+    log("Setup:\n" + setup(run, device))
     training = gnn_model_card["training"]
     train_set = load_split(run["dataset_dir"], "training", gnn_model_card, training["max_train_events"])
     val_set = load_split(run["dataset_dir"], "validation", gnn_model_card, training["max_val_events"])
